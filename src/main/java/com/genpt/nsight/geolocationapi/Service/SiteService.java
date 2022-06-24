@@ -92,8 +92,6 @@ public class SiteService {
                         //.collect(Collectors.toList());
                         .sequential().collect(Collectors.toCollection(() -> finalExtendedSiteWithAttributesList));
 
-//                ExtendedSiteWithAttributes extendedSiteWithAttributes = new ExtendedSiteWithAttributes
-//                        (uniqueSite,siteTimeZone1.getLatitude(),siteTimeZone1.getLongitude());
 
             }
         }
