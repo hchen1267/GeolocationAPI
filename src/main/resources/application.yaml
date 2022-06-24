@@ -1,0 +1,12 @@
+spring:
+  data:
+    cassandra:
+      contact-points: esbqadse1.genpt.net,esbqadse2.genpt.net,esbqadse3.genpt.net
+      username: helen_chen
+      password: WULtoVuZXzPMLVn2
+      port: 9042
+      local-datacenter: Atlanta
+      keyspace-name: nsight
+      request:
+        consistency: local_quorum
+        timeout: 10s
