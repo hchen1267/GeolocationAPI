@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ExtendedSiteWithAttributes {
+public class SiteWithExtendedAttributes {
     private Site site;
     private BigDecimal latitude;
     private BigDecimal longitude;

@@ -1,12 +1,10 @@
 package com.genpt.nsight.geolocationapi.Service;
 
-import com.genpt.nsight.geolocationapi.Entities.ExtendedSiteWithAttributes;
+import com.genpt.nsight.geolocationapi.Entities.SiteWithExtendedAttributes;
 import com.genpt.nsight.geolocationapi.Entities.Site;
-import com.genpt.nsight.geolocationapi.Entities.SiteKey;
 import com.genpt.nsight.geolocationapi.Entities.SiteTimeZone;
 import com.genpt.nsight.geolocationapi.Repository.SiteRepository;
 import com.genpt.nsight.geolocationapi.Repository.SiteTimeZoneRepository;
-import jnr.ffi.mapper.ToNativeType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,72 +27,59 @@ public class SiteService {
 
     @Cacheable("sites")
     //Method that returns a list of Sites
-    public List<ExtendedSiteWithAttributes> fetchAllSites() {
+    public List<SiteWithExtendedAttributes> fetchAllSites() {
         log.info("Method to fetch all sites called");
+        List<Site> siteList = fetchAllSitesFromDataStore();
+        List<SiteTimeZone> siteTimeZoneList= fetchAllTimeZoneRecordsFromDataStore();
 
-        //Create List of SiteTimeZone objects and find all siteTimeZones
-        List<SiteTimeZone> siteTimeZones = siteTimeZoneRepository.findAll();
+        List<Site> filteredStoreList = filterSitesByAliasName("9 Digit Store Number", siteList);
+        List<Site> filteredDCList = filterSitesByAliasName("DC Abbreviation Code", siteList);
+        List<Site> filteredSupplierList = filterSitesByAliasName("Supplier Abbreviation Location", siteList);
 
-        //Create list of Sites and find all sites
-        List<Site> sites = siteRepository.findAll();
+        List<Site> combinedSiteList = combinedSiteList(filteredStoreList,filteredDCList,filteredSupplierList);
 
-        //List of Sites to store Stores w/o duplicates
-        List<Site> storeList = new ArrayList<>();
+        List<SiteWithExtendedAttributes> siteWithExtendedAttributesList = createSiteWithExtendedAttributesList
+                (combinedSiteList, siteTimeZoneList);
 
-        //List of Sites to store DC w/o duplicates
-        List<Site> dcList = new ArrayList<>();
+        return siteWithExtendedAttributesList;
+    }
+    private List<Site> fetchAllSitesFromDataStore(){
+        return siteRepository.findAll();
+    }
+    private List<SiteTimeZone> fetchAllTimeZoneRecordsFromDataStore(){
+        return siteTimeZoneRepository.findAll();
+    }
+    private List<Site> filterSitesByAliasName(String aliasName, List<Site> siteListName){
+        return siteListName.stream()
+                .filter(site -> site.getSiteKey().getAliasName().equalsIgnoreCase(aliasName))
+                .filter(site -> site.getIsSiteActive() != null)
+                .filter(site -> site.getIsSiteActive().equalsIgnoreCase("true"))
+                .filter(site -> site.getZipCode() != null)
+                .filter(site -> !(site.getZipCode().equals("00000")))
+                .collect(Collectors.toList());
+    }
+    private List<Site> combinedSiteList(List<Site> filteredStoreList, List<Site> filteredDCList, List<Site> filteredSupplierList){
+        return Stream.of(filteredStoreList,filteredDCList,filteredSupplierList)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
 
-        //List of Sites to store suppliers wo duplicates
-        List<Site> supplierList = new ArrayList<>();
+    private List<SiteWithExtendedAttributes> createSiteWithExtendedAttributesList(List<Site> combinedSiteList, List<SiteTimeZone> siteTimeZoneList) {
+        List<SiteWithExtendedAttributes> siteWithExtendedAttributesList = new ArrayList<>();
 
-        //List of ExtendedSites
-        List<ExtendedSiteWithAttributes> extendedSiteWithAttributesList = new ArrayList<>();
-
-        //Stream to get stores via their 9 digit store number & add it to siteList
-        sites.stream()
-                .filter(site -> site.getSiteKey().getAliasName().equals("9 Digit Store Number"))
-                .forEach(site -> storeList.add(site));
-
-        //Stream to get suppliers & add it to supplierList
-        sites.stream()
-                .filter(site -> site.getSiteKey().getAliasName().equals("Supplier Abbreviation Location"))
-                .forEach(site -> supplierList.add(site));
-
-        //Stream to get DC & add it to dcList
-        sites.stream()
-                .filter(site -> site.getSiteKey().getAliasName().equals("DC Abbreviation Code"))
-                .forEach(site -> dcList.add(site));
-
-        //Add all unique sites added into an aggregate list called allUniqueSites
-        List<Site> allUniqueSites = Stream.of(storeList,supplierList,dcList)
-                                            .flatMap(Collection::stream)
-                                            .collect(Collectors.toList());
-        //List for siteTimeZone
-        List<SiteTimeZone> siteTimeZoneList = new ArrayList<>();
-
-        //forEach site in storeList set zipCode variable to be zipCode of the site
-        for (Site uniqueSite: allUniqueSites){
-            String zipCode = uniqueSite.getZipCode();
-            if (zipCode==null){
-                continue;
+        for (Site site : combinedSiteList) {
+            String zipCode = site.getZipCode();
+            if (zipCode.contains("-")) {
+                zipCode = zipCode.split("-")[0];
             }
-            else{
-                if (zipCode.contains("-")) {
-                    zipCode = zipCode.replace("-", "");
-                }
-                String finalZipCode = zipCode;
+            String finalZipCode = zipCode;
+            siteTimeZoneList.stream()
+                    .filter(siteTimeZone -> siteTimeZone.getZipCode().equalsIgnoreCase(finalZipCode))
+                    .map(siteTimeZone -> new SiteWithExtendedAttributes
+                            (site,siteTimeZone.getLatitude(),siteTimeZone.getLongitude()))
+                    .sequential().collect(Collectors.toCollection(() -> siteWithExtendedAttributesList));
 
-                List<ExtendedSiteWithAttributes> finalExtendedSiteWithAttributesList = extendedSiteWithAttributesList;
-                extendedSiteWithAttributesList = siteTimeZones.stream()
-                        .filter(siteTimeZone -> siteTimeZone.getZipCode().equalsIgnoreCase(finalZipCode))
-                        .map(siteTimeZone -> new ExtendedSiteWithAttributes
-                                (uniqueSite,siteTimeZone.getLatitude(),siteTimeZone.getLongitude()))
-                        //.collect(Collectors.toList());
-                        .sequential().collect(Collectors.toCollection(() -> finalExtendedSiteWithAttributesList));
-
-
-            }
         }
-        return extendedSiteWithAttributesList;
+        return siteWithExtendedAttributesList;
     }
 }
