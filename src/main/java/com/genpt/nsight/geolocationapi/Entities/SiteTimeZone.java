@@ -9,6 +9,7 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Table("site_timezone")
 @Getter
@@ -20,4 +21,5 @@ public class SiteTimeZone {
     private BigDecimal latitude;
     @Column
     private BigDecimal longitude;
+
 }

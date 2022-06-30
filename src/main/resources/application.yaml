@@ -9,4 +9,4 @@ spring:
       keyspace-name: nsight
       request:
         consistency: local_quorum
-        timeout: 10s
+        timeout: 30s

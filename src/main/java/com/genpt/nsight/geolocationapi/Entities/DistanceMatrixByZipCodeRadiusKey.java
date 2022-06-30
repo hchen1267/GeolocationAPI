@@ -22,10 +22,7 @@ public class DistanceMatrixByZipCodeRadiusKey {
     private String distanceUnit;
     @PrimaryKeyColumn(type= PrimaryKeyType.PARTITIONED, value = "radius_distance")
     private int radiusDistance;
-    @PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, value = "actual_distance")
-    private double actualDistance;
-    @PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, value = "matrix_id")
-    private UUID matrixID;
+
 
     public DistanceMatrixByZipCodeRadiusKey(String sourceZipCode, String distanceUnit, int radiusDistance){
         this.sourceZipCode = sourceZipCode;
@@ -33,12 +30,4 @@ public class DistanceMatrixByZipCodeRadiusKey {
         this.radiusDistance = radiusDistance;
     }
 
-    public DistanceMatrixByZipCodeRadiusKey(String sourceZipCode, String distanceUnit, int radiusDistance, double
-                                            actualDistance, UUID matrixID){
-        this.sourceZipCode = sourceZipCode;
-        this.distanceUnit = distanceUnit;
-        this.radiusDistance = radiusDistance;
-        this.actualDistance = actualDistance;
-        this.matrixID=matrixID;
-    }
 }

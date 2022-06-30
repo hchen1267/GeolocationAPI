@@ -40,7 +40,7 @@ public class SiteService {
 
         List<SiteWithExtendedAttributes> siteWithExtendedAttributesList = createSiteWithExtendedAttributesList
                 (combinedSiteList, siteTimeZoneList);
-
+        log.info("sitesCached");
         return siteWithExtendedAttributesList;
     }
     private List<Site> fetchAllSitesFromDataStore(){
@@ -76,7 +76,7 @@ public class SiteService {
             siteTimeZoneList.stream()
                     .filter(siteTimeZone -> siteTimeZone.getZipCode().equalsIgnoreCase(finalZipCode))
                     .map(siteTimeZone -> new SiteWithExtendedAttributes
-                            (site,siteTimeZone.getLatitude(),siteTimeZone.getLongitude()))
+                            (site,siteTimeZone.getLatitude(),siteTimeZone.getLongitude(),finalZipCode))
                     .sequential().collect(Collectors.toCollection(() -> siteWithExtendedAttributesList));
 
         }
